@@ -1,0 +1,21 @@
+{
+  "name": "duoplus-dashboard",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch server.ts",
+    "start": "bun run server.ts",
+    "build:server": "bun build --compile server.ts --outfile src-tauri/binaries/server-bin",
+    "tauri:dev": "bun run build:server && bunx tauri dev",
+    "tauri:build": "bun run build:server && bunx tauri build",
+    "setup": "bun install && bun run build:server"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  }
+}

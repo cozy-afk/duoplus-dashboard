@@ -1,0 +1,2698 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Duoplus Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07080d;
+        --surface: #111420;
+        --surface-alt: #13172a;
+        --border: #1e2236;
+        --text: #e4e8f5;
+        --muted: #7b85a0;
+        --accent: #6366f1;
+        --accent-hover: #4f52d4;
+        --ok: #4ade80;
+        --warn: #facc15;
+        --err: #ef4444;
+        --off: #555d74;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 14px;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ── Sidebar ─────────────────────────────────────────── */
+      .sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 16px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .sidebar-brand .logo {
+        width: 30px;
+        height: 30px;
+        background: var(--accent);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .sidebar-brand .logo svg { width: 16px; height: 16px; fill: #fff; }
+      .sidebar-brand h1 { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+      nav { padding: 10px 8px; flex: 1; }
+      nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: 7px;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s;
+        white-space: nowrap;
+        margin-bottom: 2px;
+      }
+      nav a svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.75; }
+      nav a:hover { background: var(--surface-alt); color: var(--text); }
+      nav a:hover svg { opacity: 1; }
+      nav a.active { background: rgba(99,102,241,0.15); color: var(--accent); }
+      nav a.active svg { opacity: 1; }
+
+      /* ── Layout ──────────────────────────────────────────── */
+      .content-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .topbar {
+        height: 52px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .topbar-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+      }
+      #count-tag {
+        font-size: 11px;
+        color: var(--muted);
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        padding: 2px 10px;
+        border-radius: 99px;
+      }
+      main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+      }
+
+      /* ── Error Banner ────────────────────────────────────── */
+      #err-banner { flex-shrink: 0; }
+      .err-banner {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.35);
+        color: #fca5a5;
+        font-size: 13px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* ── Cards ───────────────────────────────────────────── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px 18px;
+      }
+      .card + .card { margin-top: 16px; }
+      .card-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+
+      /* ── Stat grid ───────────────────────────────────────── */
+      .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px 18px;
+      }
+      .stat .num { font-size: 26px; font-weight: 700; line-height: 1; }
+      .stat .lab { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; }
+
+      /* ── Toolbar ─────────────────────────────────────────── */
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .toolbar-title {
+        font-size: 13px;
+        font-weight: 600;
+        flex: 1;
+        color: var(--text);
+      }
+
+      /* ── Buttons ─────────────────────────────────────────── */
+      button, .btn {
+        background: var(--surface-alt);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 14px;
+        border-radius: 7px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: border-color 0.12s, background 0.12s;
+        white-space: nowrap;
+      }
+      button:hover { border-color: var(--accent); background: rgba(99,102,241,0.08); }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+      button.danger { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+      button.danger:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5); }
+      button.ok { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.3); color: #4ade80; }
+      button.ok:hover { background: rgba(74,222,128,0.18); }
+      button.small { font-size: 11px; padding: 4px 9px; border-radius: 5px; }
+      button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+      button.ghost:hover { background: var(--surface-alt); border-color: var(--border); color: var(--text); }
+
+      /* ── Inputs ──────────────────────────────────────────── */
+      input, select, textarea {
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+        transition: border-color 0.12s;
+        outline: none;
+      }
+      input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+      input[type="number"] { width: 80px; }
+      input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+      label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+
+      /* ── Tables ──────────────────────────────────────────── */
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+      td {
+        text-align: left;
+        padding: 10px 10px;
+        border-bottom: 1px solid rgba(30,34,54,0.7);
+        vertical-align: middle;
+      }
+      tr:last-child td { border-bottom: none; }
+      tbody tr { transition: background 0.08s; }
+      tbody tr:hover { background: rgba(255,255,255,0.025); }
+      td.mono, td.id { font-family: "SF Mono", ui-monospace, Menlo, monospace; color: var(--muted); font-size: 11px; }
+
+      /* ── Status pills ────────────────────────────────────── */
+      .status-dot {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px 2px 6px;
+        border-radius: 99px;
+        font-size: 11px;
+        font-weight: 600;
+        gap: 5px;
+        vertical-align: middle;
+      }
+      .status-dot::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .status-online, .status-active {
+        background: rgba(74,222,128,0.12);
+        color: #4ade80;
+        border: 1px solid rgba(74,222,128,0.25);
+      }
+      .status-online::before, .status-active::before { background: #4ade80; }
+      .status-offline, .status-suspended {
+        background: rgba(239,68,68,0.1);
+        color: #fca5a5;
+        border: 1px solid rgba(239,68,68,0.25);
+      }
+      .status-offline::before, .status-suspended::before { background: #ef4444; }
+      .status-starting, .status-challenge, .status-needs-manual-login {
+        background: rgba(250,204,21,0.1);
+        color: #fde047;
+        border: 1px solid rgba(250,204,21,0.25);
+      }
+      .status-starting::before, .status-challenge::before, .status-needs-manual-login::before { background: #facc15; }
+      .status-unknown {
+        background: rgba(85,93,116,0.15);
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .status-unknown::before { background: var(--off); }
+
+      /* ── Delta ───────────────────────────────────────────── */
+      .delta-pos { color: var(--ok); font-weight: 600; }
+      .delta-neg { color: var(--err); font-weight: 600; }
+
+      /* ── Row actions ─────────────────────────────────────── */
+      .row-actions { display: flex; gap: 4px; align-items: center; }
+      .row-actions button { font-size: 11px; padding: 4px 9px; }
+
+      /* ── Log ─────────────────────────────────────────────── */
+      .log {
+        font-family: "SF Mono", ui-monospace, Menlo, monospace;
+        font-size: 12px;
+        background: #05060a;
+        padding: 12px;
+        border-radius: 6px;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        border: 1px solid var(--border);
+        line-height: 1.6;
+      }
+      .log .info { color: var(--muted); }
+      .log .ok { color: var(--ok); }
+      .log .warn { color: var(--warn); }
+      .log .error { color: var(--err); }
+
+      /* ── Empty state ─────────────────────────────────────── */
+      .empty { color: var(--muted); font-style: italic; padding: 20px; text-align: center; }
+
+      /* ── Quota form ──────────────────────────────────────── */
+      .quota-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 6px 0; border-bottom: 1px solid rgba(30,34,54,0.5); }
+      .quota-row:last-child { border-bottom: none; }
+      .quota-row label { flex: 1; margin: 0; font-size: 13px; color: var(--text); }
+      .quota-row input { width: 72px; }
+      .quota-row .sep { color: var(--muted); font-size: 11px; }
+
+      /* ── Segment buttons (warmup phases) ─────────────────── */
+      .seg-btn {
+        padding: 7px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 7px;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        transition: background 0.12s, color 0.12s, border-color 0.12s;
+      }
+      .seg-btn:hover { border-color: var(--accent); color: var(--text); }
+      .seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+      /* ── Platform tabs (settings only) ───────────────────── */
+      .platform-tab {
+        padding: 7px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 7px;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        transition: background 0.12s, color 0.12s, border-color 0.12s;
+      }
+      .platform-tab:hover { border-color: var(--accent); color: var(--text); }
+      .platform-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+      /* ── Dialogs ─────────────────────────────────────────── */
+      dialog {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        min-width: 420px;
+        max-width: 560px;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      }
+      dialog::backdrop {
+        background: rgba(0,0,0,0.65);
+        backdrop-filter: blur(3px);
+      }
+      dialog h3 {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        color: var(--text);
+      }
+      .form-row { margin-bottom: 13px; }
+      .form-row label { margin-bottom: 5px; }
+      .dialog-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      /* ── Utility ─────────────────────────────────────────── */
+      .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+      .muted { color: var(--muted); }
+      .help { color: var(--muted); font-size: 12px; margin: 0 0 12px; line-height: 1.5; }
+      .section-desc { color: var(--muted); font-size: 12px; margin: 0 0 12px; line-height: 1.6; }
+
+      /* ── Live View ───────────────────────────────────────── */
+      .live-image-frame {
+        background: #05060a;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── Sidebar ─────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">
+          <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="1" y="9" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+          </svg>
+        </div>
+        <h1>Duoplus</h1>
+      </div>
+      <nav>
+        <a data-tab="fleet" class="active">
+          <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="7" height="7" rx="1.5"/>
+            <rect x="11" y="2" width="7" height="7" rx="1.5"/>
+            <rect x="2" y="11" width="7" height="7" rx="1.5"/>
+            <rect x="11" y="11" width="7" height="7" rx="1.5"/>
+          </svg>
+          Fleet Health
+        </a>
+        <a data-tab="devices">
+          <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="1" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="10" cy="16" r="1"/>
+          </svg>
+          Devices
+        </a>
+        <a data-tab="warmup">
+          <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6.5 3.5l8 6.5-8 6.5V3.5z"/>
+          </svg>
+          Warmup Phases
+        </a>
+        <a data-tab="follow">
+          <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="7" cy="7" r="3"/>
+            <path d="M1 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+            <circle cx="15" cy="7" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M13 17c0-2.2 1.3-4.1 3.2-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Follow Targets
+        </a>
+        <a data-tab="posts">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2z" stroke-linecap="round"/>
+            <path d="M8 9h4M8 13h2" stroke-linecap="round"/>
+          </svg>
+          Post Queue
+        </a>
+        <a data-tab="logins">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="8" cy="10" r="3"/>
+            <path d="M11 10h7M16 8l2 2-2 2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Login Queue
+        </a>
+        <a data-tab="proxies">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 10c0 3.9 3.1 7 7 7s7-3.1 7-7-3.1-7-7-7" stroke-linecap="round"/>
+            <path d="M10 3a9 9 0 010 14M3 10h14" stroke-linecap="round"/>
+          </svg>
+          Proxies
+        </a>
+        <a data-tab="screens">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="4" width="16" height="11" rx="1.5"/>
+            <path d="M7 18h6M10 15v3" stroke-linecap="round"/>
+          </svg>
+          Screen Log
+        </a>
+        <a data-tab="live">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z" stroke-linejoin="round"/>
+            <circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none"/>
+          </svg>
+          Live View
+        </a>
+        <a data-tab="streams">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="4" width="16" height="11" rx="1.5"/>
+            <path d="M8 17h4M10 15v2"/>
+            <circle cx="10" cy="9.5" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+          Live Streams
+        </a>
+        <a data-tab="settings">
+          <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+          </svg>
+          Settings
+        </a>
+      </nav>
+    </aside>
+
+    <!-- ── Main content ─────────────────────────────────────── -->
+    <div class="content-wrap">
+      <div class="topbar">
+        <span class="topbar-title" id="topbar-title">Fleet Health</span>
+        <span id="count-tag"></span>
+        <button id="refresh" class="ghost small">↻ Refresh</button>
+      </div>
+
+      <div id="err-banner"></div>
+
+      <main>
+        <!-- FLEET TAB -->
+        <section id="tab-fleet" class="tab">
+          <div class="grid-3">
+            <div class="stat">
+              <div class="num" id="stat-accounts">–</div>
+              <div class="lab">Managed Accounts</div>
+            </div>
+            <div class="stat">
+              <div class="num" id="stat-runs">–</div>
+              <div class="lab">Sessions Today</div>
+            </div>
+            <div class="stat">
+              <div class="num" id="stat-followers">–</div>
+              <div class="lab">Followers Gained Today</div>
+            </div>
+          </div>
+
+          <!-- Device slots that need an account. Created automatically when
+               the scanner detects no logged-in account, or a warmup hits a
+               login-wall. Clearing a row = "operator handled it" (logged in
+               manually or assigned a pool account). -->
+          <div class="card" id="account-requests-card" hidden>
+            <div class="toolbar">
+              <span class="toolbar-title" style="color:var(--warn,#c47800)">⚠ Devices Needing Accounts</span>
+              <span id="account-requests-count" class="muted" style="font-size:12px"></span>
+              <button id="account-requests-refresh" class="small">Refresh</button>
+            </div>
+            <p class="section-desc">
+              Device + platform combinations where the scanner couldn't find a logged-in
+              account (or a warmup hit a login-wall). Assign credentials from the Pool,
+              log in manually via Live Streams, or click <strong>✓ Resolved</strong> once
+              handled to clear the row.
+            </p>
+            <table id="account-requests">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Platform</th>
+                  <th>Reason</th>
+                  <th>First seen</th>
+                  <th>Last seen</th>
+                  <th>Hits</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Accounts</span>
+              <button class="primary small" id="add-account">＋ Add Account</button>
+            </div>
+            <table id="accounts">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Username</th>
+                  <th>Device</th>
+                  <th>Status</th>
+                  <th>Followers</th>
+                  <th>Today</th>
+                  <th>Runs Today</th>
+                  <th>Last Run</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Live Activity</div>
+            <div id="log" class="log"><span class="info">Ready.</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Recent Runs</div>
+            <p class="section-desc">
+              Runs that were in-flight during a server restart show as <strong style="color:var(--text)">interrupted</strong>.
+              Click <strong style="color:var(--text)">Resume</strong> to re-trigger them on their original device set.
+            </p>
+            <table id="runs">
+              <thead>
+                <tr>
+                  <th>Started</th>
+                  <th>Automation</th>
+                  <th>Devices</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- DEVICES TAB -->
+        <section id="tab-devices" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <button id="sel-all" class="small">Select All</button>
+              <button id="sel-none" class="small">Select None</button>
+              <span style="flex:1"></span>
+              <button id="bulk-on" class="ok small">Power On</button>
+              <button id="bulk-off" class="danger small">Power Off</button>
+              <label style="font-size:11px; margin:0; color:var(--muted); display:flex; align-items:center; gap:4px">
+                Parallel:
+                <input id="batch-concurrency" type="number" value="10" min="1" max="50" style="width:56px" />
+              </label>
+              <label style="font-size:11px; margin:0; color:var(--muted); display:flex; align-items:center; gap:4px">
+                Jitter (s):
+                <input id="batch-jitter" type="number" value="30" min="0" max="600" style="width:56px" />
+              </label>
+              <label style="font-size:11px; margin:0; color:var(--muted); display:flex; align-items:center; gap:4px">
+                Cap (min):
+                <input id="batch-cap" type="number" value="30" min="5" max="60" style="width:56px" />
+              </label>
+              <select id="batch-automation" style="padding:6px 10px; font-size:12px">
+                <option value="warmup">Warmup</option>
+                <option value="follow">Follow</option>
+                <option value="post">Post</option>
+                <option value="login">Login (from queue)</option>
+              </select>
+              <button id="bulk-run" class="primary small">▶ Run on Selected</button>
+            </div>
+            <p class="section-desc">
+              <strong style="color:var(--text)">Warmup</strong>: scans each phone for logged-in IG/Threads/TikTok → runs warmup on every detected account (feed scrolls + stories + reels + likes + profile visits + explore). Accounts that aren't logged in are skipped silently.
+              <strong style="color:var(--text)">Follow</strong>: visit each enabled seed target's followers list and follow leads matching filters.
+              <strong style="color:var(--text)">Post</strong>: publish the next queued post for each account's platform.
+              Each device starts after a random <strong style="color:var(--text)">jitter</strong> so concurrent devices don't hit APIs in lockstep.
+            </p>
+            <table id="devices">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="check-all" /></th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>ADB</th>
+                  <th>ID</th>
+                  <th style="width:200px">Actions</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- WARMUP PHASES TAB -->
+        <section id="tab-warmup" class="tab" hidden>
+          <div class="card">
+            <div class="card-title">Phase Warmup — 2026 Instagram / TikTok SOP</div>
+            <p class="section-desc">
+              Select devices, pick a platform and phase, then optionally tune the engagement limits.
+              Each phase builds on the previous — run Phase 1 on Day 1–3, Phase 2 on Day 4–7, etc.
+            </p>
+
+            <div class="form-row">
+              <label>Devices</label>
+              <div id="phase-device-list" style="display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:7px; min-height:50px;">
+                <span style="color:var(--muted); font-size:12px; font-style:italic">Loading devices…</span>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button class="small" id="phase-sel-all">Select All</button>
+                <button class="small" id="phase-sel-none">Select None</button>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+              <div class="form-row">
+                <label>Platform</label>
+                <div style="display:flex; gap:8px; margin-top:6px;">
+                  <button class="seg-btn active" id="phase-plat-ig" data-plat="instagram">Instagram</button>
+                  <button class="seg-btn" id="phase-plat-tt" data-plat="tiktok">TikTok</button>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>Phase</label>
+                <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;" id="phase-btns">
+                  <button class="seg-btn active" data-phase="1">Phase 1<br><span style="font-size:10px; opacity:0.7">Day 1–3</span></button>
+                  <button class="seg-btn" data-phase="2">Phase 2<br><span style="font-size:10px; opacity:0.7">Day 4–7</span></button>
+                  <button class="seg-btn" data-phase="3">Phase 3<br><span style="font-size:10px; opacity:0.7">Day 8–14</span></button>
+                  <button class="seg-btn" data-phase="4">Phase 4<br><span style="font-size:10px; opacity:0.7">Day 15–21</span></button>
+                </div>
+              </div>
+            </div>
+
+            <div id="phase-desc" style="background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:12px; font-size:12px; color:var(--muted); margin-top:12px; line-height:1.7;"></div>
+
+            <div style="margin-top:18px;">
+              <div style="font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px; font-weight:600;">Engagement Overrides <span style="font-weight:400; text-transform:none; letter-spacing:0">(optional)</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-row">
+                  <label>Max Likes Override (blank = use phase default)</label>
+                  <input type="number" id="phase-max-likes" placeholder="e.g. 5" min="0" max="50" style="width:120px" />
+                </div>
+                <div class="form-row">
+                  <label>Max Duration (min)</label>
+                  <input type="number" id="phase-max-min" value="20" min="5" max="60" style="width:90px" />
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:4px;">
+                <div class="form-row">
+                  <label>Niche Hashtags (comma-separated, no #)</label>
+                  <input type="text" id="phase-hashtags" placeholder="fitness, homeworkout, mealprep" style="width:100%" />
+                </div>
+                <div class="form-row">
+                  <label>Follow Targets (comma-separated usernames)</label>
+                  <input type="text" id="phase-follow-targets" placeholder="user1, user2, user3" style="width:100%" />
+                </div>
+              </div>
+              <div class="form-row" style="margin-top:4px;">
+                <label>Comment Texts (one per line — rotated randomly)</label>
+                <textarea id="phase-comments" rows="3" placeholder="Great content!&#10;This is exactly what I needed&#10;Love this" style="width:100%; resize:vertical;"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+              <button class="primary" id="phase-run-btn">▶ Run Phase Warmup</button>
+              <span id="phase-run-status" style="font-size:12px; color:var(--muted);"></span>
+            </div>
+          </div>
+
+          <div class="card" id="phase-log-panel" hidden>
+            <div class="card-title">Phase Run Log</div>
+            <div id="phase-log" class="log"><span class="info">Waiting for run to start…</span></div>
+          </div>
+        </section>
+
+        <!-- FOLLOW TARGETS TAB -->
+        <section id="tab-follow" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Follow Targets (Seed Accounts)</span>
+              <button class="primary small" id="add-follow-target">＋ Add Target</button>
+            </div>
+            <p class="section-desc">
+              When Follow automation runs, the dashboard visits each enabled seed account's followers list,
+              applies the filter rules below, and follows matching leads up to
+              <strong style="color:var(--text)">follows_per_session</strong> from the Settings tab (per-platform).
+            </p>
+            <table id="follow-targets">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Handle</th>
+                  <th>Min Followers</th>
+                  <th>Max Followers</th>
+                  <th>Min Posts</th>
+                  <th>Skip Private</th>
+                  <th>Enabled</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- POST QUEUE TAB -->
+        <section id="tab-posts" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Scheduled Posts</span>
+              <button class="primary small" id="add-post">＋ Queue Post</button>
+            </div>
+            <p class="section-desc">
+              Posts queued here publish when the Post automation runs on a device whose logged-in account matches
+              the post's platform. <em>Media upload step (adb push from server storage) is a known TODO —
+              caption handling works, media selection from gallery is the next piece.</em>
+            </p>
+            <table id="posts">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Account</th>
+                  <th>Caption</th>
+                  <th>Media</th>
+                  <th>Scheduled For</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- LOGIN QUEUE TAB -->
+        <section id="tab-logins" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Login Queue</span>
+              <button class="primary small" id="add-logins">＋ Bulk Add</button>
+            </div>
+            <p class="section-desc">
+              Queue fresh-account credentials. When you select devices and run the
+              <strong style="color:var(--text)">Login</strong> automation on the Devices tab, each selected device claims
+              one pending row, logs into the app, and a new account record is created.
+            </p>
+            <table id="logins">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Username</th>
+                  <th>2FA</th>
+                  <th>Status</th>
+                  <th>Assigned to</th>
+                  <th>Error</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PROXIES TAB -->
+        <section id="tab-proxies" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Proxy Pool</span>
+              <button class="primary small" id="add-proxy-btn">＋ Add Proxy</button>
+            </div>
+            <p class="section-desc">
+              Duoplus tests each proxy on add and returns <em>check failed</em> if unreachable.
+              Use the <strong style="color:var(--text)">Proxy</strong> button on a device in the Devices tab to assign one of these to it.
+            </p>
+            <table id="proxies">
+              <thead>
+                <tr>
+                  <th style="width:36px"></th>
+                  <th>Host : Port</th>
+                  <th>User</th>
+                  <th>Area</th>
+                  <th>ID</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SCREEN LOG TAB -->
+        <section id="tab-screens" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Unrecognized Screens</span>
+              <button class="danger small" id="clear-screens">Clear All</button>
+            </div>
+            <p class="section-desc">
+              Every time the automation hits a screen it can't classify, it logs the activity
+              name + first 8KB of UI XML here before attempting generic recovery
+              (dismiss → back → relaunch). Review these to tell us what the device was showing —
+              we'll add specific handling rules for recurring cases.
+            </p>
+            <table id="screens">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Device</th>
+                  <th>Platform</th>
+                  <th>Context</th>
+                  <th>Screenshot</th>
+                  <th>Analysis</th>
+                  <th>Action</th>
+                  <th>Recovered</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <dialog id="screen-detail">
+            <h3>Screen Capture Detail</h3>
+            <div id="screen-detail-body" style="font-family:'SF Mono',ui-monospace,Menlo,monospace; font-size:11px; max-height:60vh; overflow:auto; background:var(--bg); padding:12px; border-radius:6px; white-space:pre-wrap; border:1px solid var(--border);"></div>
+            <div class="dialog-actions">
+              <button onclick="document.querySelector('#screen-detail').close()">Close</button>
+            </div>
+          </dialog>
+
+          <!-- Learned screen-rescue patterns (operator-curated) -->
+          <div class="card" style="margin-top:18px">
+            <div class="toolbar">
+              <span class="toolbar-title">Learned Recovery Patterns</span>
+              <button id="patterns-refresh" class="small">Refresh</button>
+            </div>
+            <p class="section-desc">
+              Patterns promoted from unknown screens. The runtime checks these BEFORE the
+              generic dismiss → back → relaunch ladder. Toggle to disable a pattern that's
+              misfiring; delete to remove it permanently.
+            </p>
+            <table id="patterns">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Platform</th>
+                  <th>Signature</th>
+                  <th>Action</th>
+                  <th>Matched / Recovered</th>
+                  <th>On</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="7" class="empty">No patterns yet — approve one from the table above.</td></tr></tbody>
+            </table>
+          </div>
+
+          <!-- Approve-as-pattern modal: operator picks signature pieces + recovery action -->
+          <dialog id="approve-pattern" style="max-width:680px; width:90vw">
+            <h3>Promote unknown screen → recovery pattern</h3>
+            <p class="section-desc" style="margin:8px 0 14px">
+              Pick 1–4 signature pieces (AND-joined — ALL must match for the pattern to fire),
+              then choose what to do when matched. Suggestions are extracted from the captured XML.
+            </p>
+            <form id="approve-pattern-form">
+              <input type="hidden" id="ap-source-id">
+              <div class="form-row">
+                <label>Name</label>
+                <input id="ap-name" required maxlength="60" placeholder="e.g. ig-save-login-popup">
+              </div>
+              <div class="form-row">
+                <label>Platform (optional)</label>
+                <select id="ap-platform">
+                  <option value="">any platform</option>
+                  <option value="instagram">instagram</option>
+                  <option value="threads">threads</option>
+                  <option value="tiktok">tiktok</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Signature pieces</label>
+                <div id="ap-suggestions" style="display:flex; flex-direction:column; gap:6px; max-height:200px; overflow:auto; padding:8px; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:12px;"></div>
+              </div>
+              <div class="form-row">
+                <label>Recovery action</label>
+                <select id="ap-action" required>
+                  <option value="tap_text">tap text containing…</option>
+                  <option value="tap_desc">tap content-desc containing…</option>
+                  <option value="tap_resource_id">tap resource-id containing…</option>
+                  <option value="press_back">press back</option>
+                  <option value="swipe_down">swipe down (dismiss bottom sheet)</option>
+                  <option value="relaunch">relaunch app</option>
+                </select>
+              </div>
+              <div class="form-row" id="ap-arg-row">
+                <label>Recovery argument</label>
+                <input id="ap-arg" placeholder="e.g. Not now">
+              </div>
+              <div class="form-row">
+                <label>Notes (optional)</label>
+                <input id="ap-notes" maxlength="200" placeholder="why this pattern, what it handles">
+              </div>
+              <div class="dialog-actions">
+                <button type="button" onclick="document.querySelector('#approve-pattern').close()">Cancel</button>
+                <button type="submit" class="primary">Save pattern</button>
+              </div>
+            </form>
+          </dialog>
+        </section>
+
+        <!-- LIVE VIEW TAB -->
+        <section id="tab-live" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Live Device View</span>
+              <select id="live-device" style="min-width:220px"></select>
+              <label style="display:flex; align-items:center; gap:6px; margin:0; font-size:12px; color:var(--muted); cursor:pointer;">
+                <input type="checkbox" id="live-auto-refresh" checked>
+                Auto-refresh (2s)
+              </label>
+              <button id="live-refresh-now" class="small">Refresh now</button>
+              <button id="live-analyze" class="primary small">Analyze with Claude</button>
+              <label style="display:flex; align-items:center; gap:6px; margin:0; font-size:12px; color:var(--muted); cursor:pointer;">
+                <input type="checkbox" id="live-auto-diagnose">
+                Auto-diagnose (60s)
+              </label>
+            </div>
+            <p class="help">
+              Fresh screenshot on every refresh. "Analyze with Claude" sends the current
+              frame to the vision API for a diagnostic summary (requires ANTHROPIC_API_KEY).
+              Auto-diagnose fires the same analysis every 60s while the tab is open.
+            </p>
+            <div style="display:grid; grid-template-columns: auto 1fr; gap:20px; align-items:start">
+              <div class="live-image-frame">
+                <img id="live-image" alt="live device view" style="max-height:70vh; max-width:380px; display:block; border-radius:4px;"/>
+              </div>
+              <div>
+                <div class="mono muted" id="live-meta" style="font-size:12px; margin-bottom:10px">select a device above to begin</div>
+                <div id="live-analysis" style="background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:14px; font-size:13px; line-height:1.6; min-height:80px; white-space:pre-wrap; color:var(--muted);">(no analysis yet)</div>
+                <h3 style="margin:18px 0 8px; font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;">Recent analyses</h3>
+                <div id="live-history" style="font-size:12px;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE STREAMS TAB (ws-scrcpy sidecar) -->
+        <section id="tab-streams" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Live Device Streams</span>
+              <span id="streams-status" class="muted" style="font-size:12px"></span>
+              <button id="streams-refresh" class="small">Refresh devices</button>
+              <button id="streams-stop-all" class="small">Stop all</button>
+            </div>
+            <p class="help">
+              Real video streams via <code>ws-scrcpy</code> (separate sidecar service). Each
+              tile is OFF by default — Start one to mount the iframe (~50–100 MB browser
+              memory per active tile). Stop tears down the WebSocket and frees the decoder.
+              Cloud devices automatically get ADB enabled + whitelisted on first Start.
+              Configure via <code>STREAMS_ENABLED</code> + <code>WS_SCRCPY_URL</code>.
+            </p>
+            <div id="streams-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-top:14px;"></div>
+          </div>
+        </section>
+
+        <!-- SETTINGS TAB -->
+        <section id="tab-settings" class="tab" hidden>
+          <div class="card">
+            <div class="toolbar">
+              <span class="toolbar-title">Per-Platform Session Quotas</span>
+              <button class="platform-tab active" data-plat="instagram">Instagram</button>
+              <button class="platform-tab" data-plat="threads">Threads</button>
+              <button class="platform-tab" data-plat="tiktok">TikTok</button>
+            </div>
+            <p class="section-desc">
+              These values define what a single warmup session tries to achieve per account on this platform.
+              Ranges roll once per session. Daily caps cut off further actions even if a session's budget isn't spent.
+            </p>
+            <div id="quota-form"></div>
+            <div style="margin-top:16px; display:flex; gap:10px; align-items:center; padding-top:14px; border-top:1px solid var(--border);">
+              <button class="primary" id="save-quota">Save</button>
+              <span id="quota-saved" style="color:var(--ok); font-size:12px; opacity:0; transition:opacity 0.3s">Saved ✓</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Bulk add logins dialog -->
+    <dialog id="logins-dialog">
+      <h3>Bulk Add Logins</h3>
+      <form id="logins-form">
+        <div class="form-row">
+          <label>Platform</label>
+          <select name="platform" required>
+            <option value="instagram">Instagram</option>
+            <option value="threads">Threads</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Paste lines — one account per line, format <code>username:password:2FA_key</code> (2FA key optional)</label>
+          <textarea name="lines" rows="10" required style="width:100%; font-family:monospace; font-size:12px; resize:vertical;"
+            placeholder="alice:secret123:JBSWY3DPEHPK3PXP&#10;bob:pw2:&#10;charlie:pw3:QRSTUVWXYZ234567"></textarea>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-logins">Cancel</button>
+          <button type="submit" class="primary">Add to Queue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Add follow target dialog -->
+    <dialog id="follow-dialog">
+      <h3>Add Follow Target</h3>
+      <form id="follow-form">
+        <div class="form-row">
+          <label>Platform</label>
+          <select name="platform" required>
+            <option value="instagram">Instagram</option>
+            <option value="threads">Threads</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Handle (without @)</label>
+          <input name="handle" required placeholder="e.g. nike" />
+        </div>
+        <div class="form-row" style="display:flex; gap:10px">
+          <div style="flex:1"><label>Min Followers</label><input name="min_followers" type="number" value="0" min="0" /></div>
+          <div style="flex:1"><label>Max Followers</label><input name="max_followers" type="number" min="0" placeholder="(no max)" /></div>
+        </div>
+        <div class="form-row" style="display:flex; gap:10px">
+          <div style="flex:1"><label>Min Posts</label><input name="min_posts" type="number" value="0" min="0" /></div>
+          <div style="flex:1"><label>Max Following (spam filter)</label><input name="max_following" type="number" min="0" placeholder="e.g. 7500" /></div>
+        </div>
+        <div class="form-row" style="display:flex; gap:16px">
+          <label style="display:flex; gap:6px; align-items:center; margin:0; color:var(--text)"><input name="require_avatar" type="checkbox" value="1" checked /> Require avatar</label>
+          <label style="display:flex; gap:6px; align-items:center; margin:0; color:var(--text)"><input name="skip_private" type="checkbox" value="1" checked /> Skip private</label>
+        </div>
+        <div class="form-row">
+          <label>Notes</label>
+          <input name="notes" placeholder="e.g. fitness niche" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-follow">Cancel</button>
+          <button type="submit" class="primary">Add</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Queue post dialog -->
+    <dialog id="post-dialog">
+      <h3>Queue a Post</h3>
+      <form id="post-form">
+        <div class="form-row">
+          <label>Platform</label>
+          <select name="platform" required>
+            <option value="instagram">Instagram</option>
+            <option value="threads">Threads</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Account (optional — else publishes from any device's logged-in account matching platform)</label>
+          <select name="account_id" id="post-account-select">
+            <option value="">— Any matching account —</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Caption</label>
+          <textarea name="caption" rows="4" style="width:100%; resize:vertical;"></textarea>
+        </div>
+        <div class="form-row">
+          <label>Media URLs (one per line — reachable HTTP URLs that the server will fetch)</label>
+          <textarea name="media_urls" rows="3" style="width:100%; font-family:monospace; font-size:12px; resize:vertical;" placeholder="https://..."></textarea>
+        </div>
+        <div class="form-row">
+          <label>Scheduled at (blank = publish ASAP when automation runs)</label>
+          <input name="scheduled_at" type="datetime-local" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-post">Cancel</button>
+          <button type="submit" class="primary">Queue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Add proxy dialog -->
+    <dialog id="add-proxy-dialog">
+      <h3>Add Proxy to Pool</h3>
+      <form id="add-proxy-form">
+        <div class="form-row">
+          <label>Quick paste — host:port:user:password (auto-fills + saves)</label>
+          <input id="add-proxy-paste" placeholder="48.44.228.127:14562:kfFxzdqVEp:JADWXEHZQc" autocomplete="off" style="width:100%" />
+        </div>
+        <div class="form-row">
+          <label>Protocol</label>
+          <select name="protocol" required>
+            <option value="socks5">SOCKS5</option>
+            <option value="http">HTTP</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Host</label>
+          <input name="host" required placeholder="1.2.3.4" style="width:100%" />
+        </div>
+        <div class="form-row">
+          <label>Port</label>
+          <input name="port" type="number" required placeholder="8080" />
+        </div>
+        <div class="form-row">
+          <label>User (optional)</label>
+          <input name="user" style="width:100%" />
+        </div>
+        <div class="form-row">
+          <label>Password (optional)</label>
+          <input name="password" type="password" style="width:100%" />
+        </div>
+        <div class="form-row">
+          <label>Name (optional)</label>
+          <input name="name" placeholder="e.g. residential-US-1" style="width:100%" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-add-proxy">Cancel</button>
+          <button type="submit" class="primary">Add + Test</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Proxy modal -->
+    <dialog id="proxy-dialog">
+      <h3 id="proxy-title">Set Proxy</h3>
+      <form id="proxy-form">
+        <input type="hidden" name="device_id" />
+        <div class="form-row">
+          <label>Quick paste — host:port:user:password (auto-fills + applies)</label>
+          <input id="proxy-paste" placeholder="48.44.228.127:14562:kfFxzdqVEp:JADWXEHZQc" autocomplete="off" style="width:100%" />
+        </div>
+        <div class="form-row">
+          <label>Or pick from your proxy list</label>
+          <select name="proxy_id" id="proxy-select" style="width:100%">
+            <option value="">— Or enter custom below —</option>
+          </select>
+        </div>
+        <p class="section-desc" style="margin:10px 0">Or enter proxy credentials manually:</p>
+        <div class="form-row">
+          <label>Host</label>
+          <input name="host" placeholder="48.44.228.138" style="width:100%" />
+        </div>
+        <div class="form-row" style="display:flex; gap:10px">
+          <div style="flex:1">
+            <label>Port</label>
+            <input name="port" type="number" placeholder="14573" style="width:100%" />
+          </div>
+          <div style="flex:1">
+            <label>User (optional)</label>
+            <input name="user" style="width:100%" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Password (optional)</label>
+          <input name="password" type="password" style="width:100%" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-proxy">Cancel</button>
+          <button type="submit" class="primary">Apply</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Add Account modal -->
+    <dialog id="add-dialog">
+      <h3>Add Account</h3>
+      <form id="add-form">
+        <div class="form-row">
+          <label>Device ID</label>
+          <select name="device_id" required id="add-device" style="width:100%"></select>
+        </div>
+        <div class="form-row">
+          <label>Platform</label>
+          <select name="platform" required style="width:100%">
+            <option value="instagram">Instagram</option>
+            <option value="threads">Threads</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Username</label>
+          <input name="username" required placeholder="e.g. celialeereels" style="width:100%" />
+        </div>
+        <div class="form-row">
+          <label>Notes (optional)</label>
+          <input name="notes" placeholder="e.g. Day 1 new account" style="width:100%" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-add">Cancel</button>
+          <button type="submit" class="primary">Add</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script>
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+      const logEl = $("#log");
+      const errBanner = $("#err-banner");
+      let devices = [];
+      let accounts = [];
+      let quotas = [];
+      let currentPlatform = "instagram";
+
+      function log(level, msg) {
+        const ts = new Date().toLocaleTimeString();
+        const span = document.createElement("span");
+        span.className = level;
+        span.textContent = `[${ts}] ${msg}\n`;
+        logEl.appendChild(span);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function showError(msg) {
+        errBanner.innerHTML = `<div class="err-banner">⚠ ${msg}</div>`;
+        setTimeout(() => (errBanner.innerHTML = ""), 8000);
+      }
+
+      async function api(path, opts = {}) {
+        const res = await fetch(path, {
+          method: opts.method || (opts.body ? "POST" : "GET"),
+          headers: { "Content-Type": "application/json" },
+          body: opts.body ? JSON.stringify(opts.body) : undefined,
+        });
+        const text = await res.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch {}
+        if (!res.ok || data.error || (data.code && data.code !== 200 && data.code !== undefined && typeof data.code === "number" && data.code < 200)) {
+          const msg = data.error || data.message || `HTTP ${res.status}`;
+          showError(msg);
+          throw new Error(msg);
+        }
+        return data;
+      }
+
+      // --- Tab nav ---
+      const TAB_TITLES = {
+        fleet: "Fleet Health",
+        devices: "Devices",
+        warmup: "Warmup Phases",
+        follow: "Follow Targets",
+        posts: "Post Queue",
+        logins: "Login Queue",
+        proxies: "Proxies",
+        screens: "Screen Log",
+        live: "Live View",
+        streams: "Live Streams",
+        settings: "Settings",
+      };
+      function setTab(name) {
+        $$(".tab").forEach((t) => (t.hidden = t.id !== `tab-${name}`));
+        $$("nav a").forEach((a) => a.classList.toggle("active", a.dataset.tab === name));
+        const titleEl = $("#topbar-title");
+        if (titleEl) titleEl.textContent = TAB_TITLES[name] || name;
+        if (name === "live") liveOnTabOpen();
+        else liveOnTabClose();
+        if (name === "streams") streamsOnTabOpen();
+        else streamsOnTabClose();
+      }
+      $$("nav a").forEach((a) => a.addEventListener("click", () => setTab(a.dataset.tab)));
+
+      // ========================================================================
+      // Live View — live screenshots + on-demand Claude analysis
+      // ========================================================================
+      const LIVE = { timer: null, diagTimer: null, current: null, history: [] };
+      function liveOnTabOpen() {
+        liveRepopulateDevices();
+        liveStartAutoRefresh();
+        liveStartAutoDiagnose();
+      }
+      function liveOnTabClose() {
+        if (LIVE.timer) { clearInterval(LIVE.timer); LIVE.timer = null; }
+        if (LIVE.diagTimer) { clearInterval(LIVE.diagTimer); LIVE.diagTimer = null; }
+      }
+
+      // ========================================================================
+      // Live Streams — ws-scrcpy-driven per-device video tiles
+      //
+      // Each tile is independent. Starting one fires POST /api/streams/:id/connect
+      // (which enables ADB on Duoplus + adb-connect for cloud devices, no-op for
+      // locals) then mounts an <iframe> at the ws-scrcpy URL. Stopping removes
+      // the iframe (frees ~50–100 MB) and POSTs /disconnect.
+      //
+      // We DON'T auto-stop on tab close — users expect tiles to keep streaming
+      // when they switch tabs. The "Stop all" button is the single nuclear option.
+      // ========================================================================
+      const STREAMS = { config: null, active: new Map() }; // active: deviceId -> {udid, iframe}
+
+      async function streamsOnTabOpen() {
+        try {
+          const r = await fetch("/api/streams/config");
+          STREAMS.config = await r.json();
+        } catch {
+          STREAMS.config = { enabled: false, baseUrl: "" };
+        }
+        streamsRender();
+      }
+      function streamsOnTabClose() {
+        // Intentionally no-op. See comment block above.
+      }
+      function streamsRender() {
+        const grid = $("#streams-grid");
+        const status = $("#streams-status");
+        if (!STREAMS.config?.enabled) {
+          status.textContent = "DISABLED — set STREAMS_ENABLED=true and configure WS_SCRCPY_URL";
+          status.style.color = "var(--warn, #c47800)";
+          grid.innerHTML = `<div class="muted" style="grid-column:1/-1; padding:20px; text-align:center; font-size:13px;">
+            Live Streams require <code>ws-scrcpy</code> running as a sidecar.
+            See <code>.env.example</code> + README for setup.
+          </div>`;
+          return;
+        }
+        status.textContent = `sidecar: ${STREAMS.config.baseUrl}  ·  ${STREAMS.active.size} active`;
+        status.style.color = "var(--muted)";
+
+        // Reuse existing tiles where possible so iframes don't tear down on
+        // every render. Keyed by device.id.
+        const present = new Set();
+        for (const d of devices) {
+          present.add(d.id);
+          let tile = grid.querySelector(`[data-stream-id="${CSS.escape(d.id)}"]`);
+          if (!tile) {
+            tile = document.createElement("div");
+            tile.dataset.streamId = d.id;
+            tile.style.cssText = "border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--bg);";
+            grid.appendChild(tile);
+          }
+          const active = STREAMS.active.get(d.id);
+          const headerLabel = `${d.id}${d.source === "local" ? " · local" : " · cloud"}`;
+          if (!active) {
+            tile.innerHTML = `
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="mono" style="font-size:12px;">${headerLabel}</span>
+                <button data-action="start" class="primary small">Start</button>
+              </div>
+              <div style="aspect-ratio:9/16; background:var(--bg2,#0c0e13); border:1px dashed var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px;">
+                stream off
+              </div>`;
+            tile.querySelector('[data-action="start"]').onclick = () => streamsStart(d);
+          } else {
+            // Don't replace the iframe on re-render — only update the header/button.
+            // If there's no iframe yet (just mounted), build the structure once.
+            if (!tile.querySelector("iframe")) {
+              tile.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span class="mono" style="font-size:12px;">${headerLabel} · <span style="color:var(--ok,#3fb950)">live</span></span>
+                  <button data-action="stop" class="small">Stop</button>
+                </div>
+                <iframe src="${active.streamUrl}" style="width:100%; aspect-ratio:9/16; border:1px solid var(--border); border-radius:6px; background:#000;" allow="autoplay"></iframe>`;
+              tile.querySelector('[data-action="stop"]').onclick = () => streamsStop(d.id);
+            }
+          }
+        }
+        // Drop tiles for devices that vanished from the fleet.
+        grid.querySelectorAll("[data-stream-id]").forEach((el) => {
+          if (!present.has(el.dataset.streamId)) el.remove();
+        });
+      }
+      async function streamsStart(d) {
+        const tile = $(`#streams-grid [data-stream-id="${CSS.escape(d.id)}"]`);
+        if (tile) tile.querySelector('[data-action="start"]').textContent = "starting…";
+        try {
+          const r = await fetch(`/api/streams/${encodeURIComponent(d.id)}/connect`, { method: "POST" });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+          STREAMS.active.set(d.id, { udid: data.udid, streamUrl: data.streamUrl, source: data.source });
+          streamsRender();
+        } catch (err) {
+          alert(`Stream start failed for ${d.id}:\n${err.message}`);
+          if (tile) tile.querySelector('[data-action="start"]').textContent = "Start";
+        }
+      }
+      async function streamsStop(deviceId) {
+        const active = STREAMS.active.get(deviceId);
+        if (!active) return;
+        // Drop the iframe FIRST so memory frees immediately; the disconnect
+        // call is best-effort cleanup of the adb-over-tcp tunnel.
+        STREAMS.active.delete(deviceId);
+        streamsRender();
+        try {
+          await fetch(`/api/streams/${encodeURIComponent(active.udid)}/disconnect`, { method: "POST" });
+        } catch { /* don't surface tear-down errors — the iframe is already gone */ }
+      }
+      $("#streams-refresh")?.addEventListener("click", streamsRender);
+      $("#streams-stop-all")?.addEventListener("click", async () => {
+        const ids = [...STREAMS.active.keys()];
+        for (const id of ids) await streamsStop(id);
+      });
+      function liveRepopulateDevices() {
+        const sel = $("#live-device");
+        if (!sel) return;
+        const prev = sel.value;
+        const opts = devices.map((d) => {
+          const label = `${d.id}${d.source === "local" ? " (local)" : ""}`;
+          return `<option value="${d.id}">${label}</option>`;
+        }).join("");
+        sel.innerHTML = opts || `<option value="">(no devices)</option>`;
+        if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+        LIVE.current = sel.value || null;
+      }
+      function liveStartAutoRefresh() {
+        if (LIVE.timer) clearInterval(LIVE.timer);
+        if (!$("#live-auto-refresh").checked) return;
+        LIVE.timer = setInterval(liveRefreshFrame, 2000);
+        liveRefreshFrame();
+      }
+      function liveStartAutoDiagnose() {
+        if (LIVE.diagTimer) clearInterval(LIVE.diagTimer);
+        if (!$("#live-auto-diagnose").checked) return;
+        LIVE.diagTimer = setInterval(() => liveAnalyzeNow("auto-diagnose"), 60_000);
+      }
+      async function liveRefreshFrame() {
+        const id = $("#live-device").value;
+        if (!id) return;
+        const img = $("#live-image");
+        // Cache-bust so the browser actually re-fetches.
+        img.src = `/api/device/${encodeURIComponent(id)}/screenshot.png?t=${Date.now()}`;
+        $("#live-meta").textContent = `device ${id} • ${new Date().toLocaleTimeString()}`;
+      }
+      async function liveAnalyzeNow(contextLabel) {
+        const id = $("#live-device").value;
+        if (!id) return;
+        const panel = $("#live-analysis");
+        panel.textContent = "analyzing…";
+        try {
+          const res = await fetch(`/api/device/${encodeURIComponent(id)}/analyze`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ context: contextLabel || "live-view" }),
+          });
+          const data = await res.json();
+          if (data.error) { panel.textContent = `error: ${data.error}`; return; }
+          if (!data.analysis) {
+            panel.textContent = "no analysis returned (is ANTHROPIC_API_KEY set?)";
+            return;
+          }
+          panel.textContent = data.analysis;
+          LIVE.history.unshift({ t: Date.now(), device: id, analysis: data.analysis, ctx: contextLabel });
+          LIVE.history = LIVE.history.slice(0, 12);
+          $("#live-history").innerHTML = LIVE.history.map((h) =>
+            `<div style="padding:6px 0; border-top:1px solid #1a1a1a"><span class="muted">${new Date(h.t).toLocaleTimeString()} • ${h.ctx}</span><br/>${h.analysis.replace(/</g, "&lt;")}</div>`
+          ).join("");
+        } catch (e) {
+          panel.textContent = `analyze failed: ${e.message}`;
+        }
+      }
+      $("#live-device").addEventListener("change", () => { LIVE.current = $("#live-device").value; liveRefreshFrame(); });
+      $("#live-refresh-now").addEventListener("click", liveRefreshFrame);
+      $("#live-analyze").addEventListener("click", () => liveAnalyzeNow("manual"));
+      $("#live-auto-refresh").addEventListener("change", liveStartAutoRefresh);
+      $("#live-auto-diagnose").addEventListener("change", liveStartAutoDiagnose);
+
+      // --- Fleet ---
+      function platformIcon(p) {
+        return { instagram: "📷", threads: "🧵", tiktok: "🎵" }[p] || "•";
+      }
+      function renderAccounts() {
+        const tbody = $("#accounts tbody");
+        if (!accounts.length) {
+          tbody.innerHTML = `<tr><td colspan="9" class="empty">No accounts yet. Click "＋ Add Account" to begin.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = accounts
+          .map((a) => {
+            const delta = a.followers_delta_today ?? 0;
+            const deltaCls = delta > 0 ? "delta-pos" : delta < 0 ? "delta-neg" : "";
+            const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+            const lastRun = a.last_run_at
+              ? new Date(a.last_run_at * 1000).toLocaleString()
+              : "—";
+            return `
+          <tr data-id="${a.id}">
+            <td>${platformIcon(a.platform)} ${a.platform}</td>
+            <td><strong>${a.username}</strong>${a.notes ? `<br><span style="color:var(--muted);font-size:11px">${a.notes}</span>` : ""}</td>
+            <td class="mono">${a.device_id}</td>
+            <td><span class="status-dot status-${a.status}"></span>${a.status}</td>
+            <td>${a.followers ?? "—"}</td>
+            <td class="${deltaCls}">${deltaStr}</td>
+            <td>${a.runs_today}</td>
+            <td>${lastRun}</td>
+            <td>
+              <div class="row-actions">
+                <button class="primary" data-act="run-account" data-id="${a.id}" data-device="${a.device_id}">Run</button>
+                <button data-act="edit-account" data-id="${a.id}">Edit</button>
+                <button class="danger" data-act="del-account" data-id="${a.id}">✕</button>
+              </div>
+            </td>
+          </tr>`;
+          })
+          .join("");
+      }
+
+      function renderFleetStats() {
+        $("#stat-accounts").textContent = accounts.length;
+        $("#stat-runs").textContent = accounts.reduce((s, a) => s + a.runs_today, 0);
+        const fd = accounts.reduce((s, a) => s + (a.followers_delta_today || 0), 0);
+        $("#stat-followers").textContent = (fd > 0 ? "+" : "") + fd;
+      }
+
+      // --- Devices ---
+      function statusClass(s) {
+        s = String(s || "").toLowerCase();
+        if (/online|running|active/.test(s)) return "status-online";
+        if (/start|boot|restart/.test(s)) return "status-starting";
+        if (/error/.test(s)) return "status-suspended";
+        return "status-offline";
+      }
+      function renderDevices() {
+        const tbody = $("#devices tbody");
+        if (!devices.length) {
+          tbody.innerHTML = `<tr><td colspan="6" class="empty">No devices found.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = devices
+          .map((d) => {
+            const adbDisplay = d.adb
+              ? d.adb
+              : d.ip
+              ? `${d.ip} (not connected)`
+              : "—";
+            const label = d.status_label || `status ${d.status}`;
+            const srcBadge = d.source === "local"
+              ? '<span style="background:#1d3a2a;color:var(--ok);border:1px solid #265a3c;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px">LOCAL</span>'
+              : '<span style="background:#1c202b;color:var(--muted);border:1px solid var(--border);padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px">CLOUD</span>';
+            return `
+          <tr data-id="${d.id}">
+            <td><input type="checkbox" class="row-check" data-id="${d.id}" /></td>
+            <td>${srcBadge}${d.name ?? "—"}<br><span style="color:var(--muted);font-size:11px">${d.os ?? ""} · ${d.area ?? ""}</span></td>
+            <td><span class="status-dot ${statusClass(label)}"></span>${label}</td>
+            <td class="mono">${adbDisplay}</td>
+            <td class="mono">${d.id}</td>
+            <td>
+              <div class="row-actions">
+                ${d.source === "local" ? "" : `
+                <button data-act="on" data-id="${d.id}">On</button>
+                <button data-act="off" data-id="${d.id}">Off</button>
+                <button data-act="proxy" data-id="${d.id}" title="Set / change proxy">Proxy</button>
+                `}
+              </div>
+            </td>
+          </tr>`;
+          })
+          .join("");
+      }
+      function selectedDeviceIds() {
+        return $$(".row-check:checked").map((el) => el.dataset.id);
+      }
+
+      // --- Settings / Quotas ---
+      const QUOTA_GROUPS = [
+        {
+          label: "Session Duration (min)",
+          fields: [["session_min_min", "min"], ["session_max_min", "max"]],
+        },
+        {
+          label: "Home Feed Scrolls",
+          fields: [["feed_scrolls_min", "min"], ["feed_scrolls_max", "max"]],
+        },
+        {
+          label: "Reels / Videos",
+          fields: [["reels_min", "min"], ["reels_max", "max"]],
+        },
+        {
+          label: "Stories",
+          fields: [["stories_min", "min"], ["stories_max", "max"]],
+        },
+        {
+          label: "Explore Scrolls",
+          fields: [["explore_scrolls_min", "min"], ["explore_scrolls_max", "max"]],
+        },
+        {
+          label: "Likes / Session",
+          fields: [["likes_per_session", ""]],
+        },
+        {
+          label: "Comments / Session",
+          fields: [["comments_per_session", ""]],
+        },
+        {
+          label: "Follows / Session",
+          fields: [["follows_per_session", ""]],
+        },
+        {
+          label: "Unfollows / Session",
+          fields: [["unfollows_per_session", ""]],
+        },
+        {
+          label: "DMs / Session",
+          fields: [["dms_per_session", ""]],
+        },
+        {
+          label: "Shares / Session",
+          fields: [["shares_per_session", ""]],
+        },
+        {
+          label: "Profile Visits / Session",
+          fields: [["profile_visits_per_session", ""]],
+        },
+        {
+          label: "Daily Follow Cap",
+          fields: [["daily_follow_cap", ""]],
+        },
+        {
+          label: "Daily Action Cap (total)",
+          fields: [["daily_action_cap", ""]],
+        },
+      ];
+      function renderQuotaForm() {
+        const q = quotas.find((x) => x.platform === currentPlatform);
+        if (!q) {
+          $("#quota-form").innerHTML = "<p class='empty'>Loading…</p>";
+          return;
+        }
+        $("#quota-form").innerHTML = QUOTA_GROUPS.map((g) => {
+          const inputs = g.fields
+            .map(([field, lbl]) => {
+              return `<input type="number" name="${field}" value="${q[field]}" min="0" />${
+                lbl ? `<span class="sep">${lbl}</span>` : ""
+              }`;
+            })
+            .join(" ");
+          return `<div class="quota-row"><label>${g.label}</label>${inputs}</div>`;
+        }).join("");
+      }
+
+      async function saveQuota() {
+        const patch = {};
+        $$("#quota-form input[name]").forEach((i) => {
+          patch[i.name] = Number(i.value);
+        });
+        await api(`/api/quotas/${currentPlatform}`, { method: "PATCH", body: patch });
+        const tag = $("#quota-saved");
+        tag.style.opacity = "1";
+        setTimeout(() => (tag.style.opacity = "0"), 1600);
+        await loadQuotas();
+      }
+
+      // --- API calls ---
+      async function loadDevices() {
+        try {
+          const data = await api("/api/devices");
+          devices = data.list ?? data ?? [];
+          renderDevices();
+          $("#count-tag").textContent = `${devices.length} device(s), ${accounts.length} account(s)`;
+        } catch (e) {
+          log("error", `Devices: ${e.message}`);
+        }
+      }
+      async function loadAccounts() {
+        try {
+          accounts = await api("/api/accounts");
+          renderAccounts();
+          renderFleetStats();
+          $("#count-tag").textContent = `${devices.length} device(s), ${accounts.length} account(s)`;
+        } catch (e) {
+          log("error", `Accounts: ${e.message}`);
+        }
+      }
+      async function loadQuotas() {
+        try {
+          quotas = await api("/api/quotas");
+          renderQuotaForm();
+        } catch (e) {
+          log("error", `Quotas: ${e.message}`);
+        }
+      }
+      async function loadRuns() {
+        try {
+          const rows = await api("/api/runs");
+          const tb = $("#runs tbody");
+          if (!rows.length) {
+            tb.innerHTML = `<tr><td colspan="6" class="empty">No runs yet.</td></tr>`;
+            return;
+          }
+          tb.innerHTML = rows.map((r) => {
+            const devices = JSON.parse(r.device_ids_json || "[]");
+            const started = new Date(r.started_at * 1000).toLocaleString();
+            const dur = r.ended_at ? `${Math.floor((r.ended_at - r.started_at) / 60)}m` : "—";
+            const canResume = r.status === "interrupted";
+            return `
+              <tr data-id="${r.run_id}">
+                <td>${started}</td>
+                <td>${r.automation}</td>
+                <td class="mono">${devices.join(", ")}</td>
+                <td><span class="status-dot status-${r.status === 'completed' ? 'active' : r.status === 'failed' || r.status === 'interrupted' ? 'suspended' : 'unknown'}"></span>${r.status}</td>
+                <td>${dur}</td>
+                <td>
+                  <button data-act="view-run" data-id="${r.run_id}">View Log</button>
+                  ${canResume ? `<button class="primary small" data-act="resume-run" data-id="${r.run_id}" data-automation="${r.automation}" data-devices='${JSON.stringify(devices)}'>Resume</button>` : ""}
+                </td>
+              </tr>`;
+          }).join("");
+        } catch (e) { log("warn", `Runs: ${e.message}`); }
+      }
+
+      async function loadScreens() {
+        try {
+          const rows = await api("/api/unknown-screens");
+          const tb = $("#screens tbody");
+          if (!rows.length) {
+            tb.innerHTML = `<tr><td colspan="9" class="empty">None yet. Good sign — automation understood every screen it saw.</td></tr>`;
+            return;
+          }
+          const esc = (s) => (s || "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+          tb.innerHTML = rows.map((r) => {
+            const when = new Date(r.ts * 1000).toLocaleString();
+            const focus = (r.focus || "—").replace(/mCurrentFocus=Window\{[a-f0-9]+ u0 /, "").replace(/\}$/, "").substring(0, 70);
+            const shotBasename = r.screenshot_path ? r.screenshot_path.split("/").pop() : null;
+            const shotCell = shotBasename
+              ? `<a href="/screenshots/${encodeURIComponent(shotBasename)}" target="_blank"><img src="/screenshots/${encodeURIComponent(shotBasename)}" style="max-width:80px; max-height:120px; border:1px solid #333; border-radius:3px"></a>`
+              : `<span class="muted">—</span>`;
+            const analysisCell = r.analysis
+              ? `<div style="max-width:320px; max-height:120px; overflow:auto; font-size:11px; line-height:1.35">${esc(r.analysis)}</div>`
+              : `<span class="muted">${r.screenshot_path ? "pending / no key" : "—"}</span>`;
+            return `
+              <tr data-id="${r.id}">
+                <td>${when}</td>
+                <td class="mono">${r.device_id}</td>
+                <td>${r.platform || "—"}</td>
+                <td>${r.context || "—"}</td>
+                <td>${shotCell}</td>
+                <td>${analysisCell}</td>
+                <td>${r.recovery_action || "—"}</td>
+                <td>${r.recovered ? "✓" : "✗"}</td>
+                <td>
+                  <button data-act="view-screen" data-id="${r.id}">View XML</button>
+                  <button class="primary small" data-act="approve-screen" data-id="${r.id}">Approve</button>
+                  <button class="danger small" data-act="del-screen" data-id="${r.id}">✕</button>
+                </td>
+              </tr>`;
+          }).join("");
+          window.__screens = rows;
+        } catch (e) { log("warn", `Screens: ${e.message}`); }
+      }
+      $("#clear-screens").addEventListener("click", async () => {
+        if (confirm("Clear ALL unknown-screen captures?")) {
+          await api("/api/unknown-screens/clear", { body: {} });
+          await loadScreens();
+        }
+      });
+
+      // ========================================================================
+      // Screen rescue patterns — operator-curated learned recoveries.
+      // Approve flow: pull the unknown-screen's xml_head → extract distinctive
+      // texts/descs/resource-ids → render as checkboxes → user picks 1-4 + a
+      // recovery action → POST /api/screen-patterns. Runtime cache invalidates
+      // server-side so the new pattern fires immediately.
+      // ========================================================================
+      function extractSignatureSuggestions(xml) {
+        const suggestions = [];
+        const seen = new Set();
+        const add = (type, value) => {
+          if (!value) return;
+          const key = `${type}|${value}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          suggestions.push({ type, contains: value });
+        };
+        // Extract distinctive matchable strings. Prefer specific texts/descs;
+        // resource-ids are useful when texts are dynamic. Cap each category so
+        // the user isn't drowning in 200 options.
+        const TEXT_RE = /text="([^"]{2,80})"/g;
+        const DESC_RE = /content-desc="([^"]{2,80})"/g;
+        const RID_RE = /resource-id="([^"]+)"/g;
+        let m;
+        let count = 0;
+        while ((m = TEXT_RE.exec(xml)) !== null && count++ < 25) {
+          // Skip pure numbers or single chars — they're rarely distinctive.
+          if (/^\d+$/.test(m[1]) || m[1].length < 3) continue;
+          add("text", m[1]);
+        }
+        count = 0;
+        while ((m = DESC_RE.exec(xml)) !== null && count++ < 25) {
+          if (m[1].length < 3) continue;
+          add("desc", m[1]);
+        }
+        count = 0;
+        while ((m = RID_RE.exec(xml)) !== null && count++ < 25) {
+          // Strip the leading package qualifier so the rule is more portable.
+          const stripped = m[1].split(":id/").pop();
+          if (!stripped || stripped.length < 4) continue;
+          add("resource-id", stripped);
+        }
+        return suggestions;
+      }
+
+      async function openApprovePatternModal(unknownId) {
+        // Pull the full row (with xml_head). The list endpoint already
+        // includes xml_head on /api/unknown-screens — fetch the single row
+        // for safety in case that ever changes.
+        let row;
+        try {
+          row = await api(`/api/unknown-screens/${unknownId}`);
+        } catch (e) {
+          alert(`Could not load screen #${unknownId}: ${e.message}`);
+          return;
+        }
+        const xml = row.xml_head || "";
+        const suggestions = extractSignatureSuggestions(xml);
+        $("#ap-source-id").value = String(unknownId);
+        $("#ap-name").value = "";
+        $("#ap-platform").value = row.platform || "";
+        $("#ap-action").value = "tap_text";
+        $("#ap-arg").value = "";
+        $("#ap-notes").value = "";
+        const box = $("#ap-suggestions");
+        if (suggestions.length === 0) {
+          box.innerHTML = `<div class="muted">No matchable strings extracted from the XML — pattern signatures need at least one piece. (Was xml_head empty?)</div>`;
+        } else {
+          box.innerHTML = suggestions.map((s, i) => `
+            <label style="display:flex; gap:6px; align-items:flex-start; cursor:pointer;">
+              <input type="checkbox" data-sig-idx="${i}">
+              <span class="mono" style="font-size:11px;">
+                <span style="color:var(--muted)">${s.type}:</span>
+                <span>${(s.contains || "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}</span>
+              </span>
+            </label>`).join("");
+          window.__apSuggestions = suggestions;
+        }
+        $("#approve-pattern").showModal();
+      }
+
+      // Toggle the recovery_arg input visibility based on the chosen action.
+      $("#ap-action")?.addEventListener("change", () => {
+        const needsArg = ["tap_text", "tap_desc", "tap_resource_id"].includes($("#ap-action").value);
+        $("#ap-arg-row").style.display = needsArg ? "" : "none";
+      });
+
+      $("#approve-pattern-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const checked = [...$("#ap-suggestions").querySelectorAll('input[type="checkbox"]:checked')];
+        if (checked.length === 0) {
+          alert("Pick at least one signature piece (the rule needs something to match against).");
+          return;
+        }
+        if (checked.length > 4) {
+          alert("Pick at most 4 — more than that is usually too restrictive.");
+          return;
+        }
+        const signature = checked.map((cb) => window.__apSuggestions[+cb.dataset.sigIdx]);
+        const action = $("#ap-action").value;
+        const needsArg = ["tap_text", "tap_desc", "tap_resource_id"].includes(action);
+        const body = {
+          name: $("#ap-name").value.trim(),
+          platform: $("#ap-platform").value || null,
+          signature,
+          recovery_action: action,
+          recovery_arg: needsArg ? $("#ap-arg").value.trim() : null,
+          source_unknown_id: Number($("#ap-source-id").value) || null,
+          notes: $("#ap-notes").value.trim() || null,
+        };
+        try {
+          await api("/api/screen-patterns", { body });
+          $("#approve-pattern").close();
+          log("ok", `Pattern "${body.name}" saved — will fire on the next matching screen.`);
+          await loadPatterns();
+        } catch (err) {
+          alert(`Save failed: ${err.message}`);
+        }
+      });
+
+      async function loadPatterns() {
+        try {
+          const rows = await api("/api/screen-patterns");
+          const tb = $("#patterns tbody");
+          if (!rows.length) {
+            tb.innerHTML = `<tr><td colspan="7" class="empty">No patterns yet — approve one from the table above.</td></tr>`;
+            return;
+          }
+          tb.innerHTML = rows.map((r) => {
+            let sig;
+            try { sig = JSON.parse(r.signature_json); } catch { sig = []; }
+            const sigSummary = sig.map((s) => `${s.type}:"${s.contains}"`).join(" + ");
+            const action = r.recovery_arg
+              ? `${r.recovery_action}(${r.recovery_arg})`
+              : r.recovery_action;
+            return `
+              <tr data-pattern-id="${r.id}">
+                <td>${r.name}</td>
+                <td>${r.platform || "any"}</td>
+                <td class="mono" style="font-size:11px; max-width:340px; overflow-wrap:anywhere;">${sigSummary}</td>
+                <td class="mono" style="font-size:11px;">${action}</td>
+                <td>${r.times_matched} / ${r.times_recovered}</td>
+                <td>
+                  <label class="switch">
+                    <input type="checkbox" data-act="toggle-pattern" data-id="${r.id}" ${r.enabled ? "checked" : ""}>
+                  </label>
+                </td>
+                <td><button class="danger small" data-act="del-pattern" data-id="${r.id}">✕</button></td>
+              </tr>`;
+          }).join("");
+        } catch (e) { log("warn", `Patterns: ${e.message}`); }
+      }
+      $("#patterns-refresh")?.addEventListener("click", loadPatterns);
+
+      // ---- Account requests (Needs-Accounts panel on Fleet tab) ----
+      async function loadAccountRequests() {
+        try {
+          const rows = await api("/api/account-requests");
+          const card = $("#account-requests-card");
+          const tb = $("#account-requests tbody");
+          const count = $("#account-requests-count");
+          if (!rows.length) {
+            // Hide the whole card when there's nothing to do — no noise.
+            card.hidden = true;
+            count.textContent = "";
+            tb.innerHTML = "";
+            return;
+          }
+          card.hidden = false;
+          count.textContent = `${rows.length} pending`;
+          const esc = (s) => (s || "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+          const fmt = (ts) => new Date(ts * 1000).toLocaleString();
+          tb.innerHTML = rows.map((r) => `
+            <tr data-req-id="${r.id}">
+              <td class="mono">${esc(r.device_id)}</td>
+              <td>${platformIcon(r.platform)} ${r.platform}</td>
+              <td style="max-width:420px; font-size:12px;">${esc(r.reason)}</td>
+              <td style="font-size:11px; color:var(--muted)">${fmt(r.first_seen_at)}</td>
+              <td style="font-size:11px; color:var(--muted)">${fmt(r.last_seen_at)}</td>
+              <td style="text-align:center">${r.hit_count}</td>
+              <td>
+                <button class="primary small" data-act="resolve-req" data-id="${r.id}">✓ Resolved</button>
+                <button class="danger small" data-act="del-req" data-id="${r.id}">✕</button>
+              </td>
+            </tr>`).join("");
+        } catch (e) { log("warn", `Account-requests: ${e.message}`); }
+      }
+      $("#account-requests-refresh")?.addEventListener("click", loadAccountRequests);
+      $("#account-requests")?.addEventListener("click", async (e) => {
+        const t = e.target;
+        const id = t.dataset?.id;
+        if (!id) return;
+        if (t.dataset.act === "resolve-req") {
+          await api(`/api/account-requests/${id}/resolve`, { body: {} });
+          await loadAccountRequests();
+        } else if (t.dataset.act === "del-req") {
+          await api(`/api/account-requests/${id}`, { method: "DELETE" });
+          await loadAccountRequests();
+        }
+      });
+      // Per-row pattern toggle + delete handlers — bind on the table once.
+      $("#patterns")?.addEventListener("click", async (e) => {
+        const t = e.target;
+        if (t.dataset?.act === "del-pattern") {
+          if (confirm("Delete this pattern? It will stop firing on future matches.")) {
+            await api(`/api/screen-patterns/${t.dataset.id}`, { method: "DELETE" });
+            await loadPatterns();
+          }
+        }
+      });
+      $("#patterns")?.addEventListener("change", async (e) => {
+        const t = e.target;
+        if (t.dataset?.act === "toggle-pattern") {
+          await api(`/api/screen-patterns/${t.dataset.id}`, {
+            method: "PATCH", body: { enabled: t.checked },
+          });
+        }
+      });
+
+      async function loadLogins() {
+        try {
+          const rows = await api("/api/login-queue");
+          const tb = $("#logins tbody");
+          if (!rows.length) {
+            tb.innerHTML = `<tr><td colspan="7" class="empty">Queue is empty. Click ＋ Bulk Add to paste credentials.</td></tr>`;
+            return;
+          }
+          tb.innerHTML = rows.map((r) => `
+            <tr data-id="${r.id}">
+              <td>${platformIcon(r.platform)} ${r.platform}</td>
+              <td>@${r.username}</td>
+              <td>${r.totp_secret ? "✓" : "—"}</td>
+              <td><span class="status-dot status-${r.status === 'success' ? 'active' : r.status === 'failed' ? 'suspended' : 'unknown'}"></span>${r.status}</td>
+              <td class="mono">${r.assigned_device_id || "—"}</td>
+              <td style="color:var(--err); font-size:11px">${r.error || "—"}</td>
+              <td><button class="danger small" data-act="del-login" data-id="${r.id}">✕</button></td>
+            </tr>`).join("");
+        } catch (e) { log("warn", `Logins: ${e.message}`); }
+      }
+      $("#add-logins").addEventListener("click", () => $("#logins-dialog").showModal());
+      $("#cancel-logins").addEventListener("click", () => $("#logins-dialog").close());
+      $("#logins-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const body = { platform: fd.get("platform"), lines: fd.get("lines") };
+        try {
+          const r = await api("/api/login-queue", { body });
+          log("ok", `Added ${r.added} login(s) to queue${r.skipped?.length ? `; ${r.skipped.length} skipped` : ""}`);
+          for (const s of r.skipped || []) log("warn", `  skipped: ${s.line} — ${s.reason}`);
+          $("#logins-dialog").close();
+          e.target.reset();
+          await loadLogins();
+        } catch (err) {}
+      });
+
+      async function refreshAll() {
+        await Promise.all([
+          loadDevices(),
+          loadAccounts(),
+          loadQuotas(),
+          loadProxies(),
+          loadFollowTargets(),
+          loadPosts(),
+          loadLogins(),
+          loadScreens(),
+          loadPatterns(),
+          loadAccountRequests(),
+          loadRuns(),
+        ]);
+      }
+
+      // --- Account actions ---
+      async function runAccount(accountId, deviceId) {
+        // Use the same ADB-driven warmup as the batch runner — the old
+        // orchestrator path depended on Duoplus's automation scope which
+        // the API key doesn't have.
+        log("info", `Starting warmup on device ${deviceId} for account #${accountId}...`);
+        const { run_id } = await api("/api/batch-run", {
+          body: {
+            device_ids: [deviceId],
+            scan_accounts: false,
+            automation: "warmup",
+            concurrency: 1,
+            start_jitter_sec: 0,
+            max_minutes: Number($("#batch-cap").value) || 30,
+          },
+        });
+        pollRun(run_id);
+      }
+      async function pollRun(runId) {
+        let seen = 0;
+        const poll = async () => {
+          try {
+            const { logs, done } = await api(`/api/run/${runId}/logs`);
+            for (const l of logs.slice(seen)) log(l.level, l.msg);
+            seen = logs.length;
+            if (!done) setTimeout(poll, 2500);
+            else setTimeout(loadAccounts, 1000);
+          } catch (e) {
+            log("error", `Run poll failed: ${e.message}`);
+          }
+        };
+        poll();
+      }
+
+      // --- Device power ---
+      async function powerOn(ids) {
+        log("info", `Power on: ${ids.join(", ")}`);
+        await api("/api/power-on", { body: { ids } });
+        setTimeout(loadDevices, 2000);
+      }
+      async function powerOff(ids) {
+        log("info", `Power off: ${ids.join(", ")}`);
+        await api("/api/power-off", { body: { ids } });
+        setTimeout(loadDevices, 2000);
+      }
+
+      // --- Add Account dialog ---
+      const addDialog = $("#add-dialog");
+      $("#add-account").addEventListener("click", () => {
+        const sel = $("#add-device");
+        sel.innerHTML = devices.length
+          ? devices.map((d) => `<option value="${d.id}">${d.name ?? d.id} (${d.id})</option>`).join("")
+          : `<option value="">No devices — refresh first</option>`;
+        addDialog.showModal();
+      });
+      $("#cancel-add").addEventListener("click", () => addDialog.close());
+      $("#add-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        await api("/api/accounts", {
+          body: Object.fromEntries(fd.entries()),
+        });
+        addDialog.close();
+        e.target.reset();
+        log("ok", "Account added.");
+        await loadAccounts();
+      });
+
+      // --- Global clicks ---
+      let proxyList = [];
+      async function loadProxies() {
+        try {
+          const d = await api("/api/proxies");
+          proxyList = d.list ?? [];
+          const sel = $("#proxy-select");
+          sel.innerHTML = '<option value="">— Or enter custom below —</option>' + proxyList.map((p) =>
+            `<option value="${p.id}">${p.host}:${p.port} ${p.user ? `(${p.user})` : ""} ${p.area ? `· ${p.area}` : ""}</option>`
+          ).join("");
+          renderProxyTable();
+        } catch (e) { log("warn", `Proxies: ${e.message}`); }
+      }
+      function renderProxyTable() {
+        const tb = $("#proxies tbody");
+        if (!proxyList.length) {
+          tb.innerHTML = `<tr><td colspan="6" class="empty">No proxies yet.</td></tr>`;
+          return;
+        }
+        tb.innerHTML = proxyList.map((p) => `
+          <tr data-id="${p.id}">
+            <td><input type="checkbox" class="proxy-check" data-id="${p.id}" /></td>
+            <td class="mono">${p.host}:${p.port}</td>
+            <td>${p.user || "—"}</td>
+            <td>${p.area || "—"}</td>
+            <td class="mono">${p.id}</td>
+            <td><button class="danger small" data-act="del-proxy" data-id="${p.id}">Delete</button></td>
+          </tr>`).join("");
+      }
+      $("#add-proxy-btn").addEventListener("click", () => $("#add-proxy-dialog").showModal());
+      $("#cancel-add-proxy").addEventListener("click", () => $("#add-proxy-dialog").close());
+      $("#add-proxy-paste").addEventListener("input", (e) => {
+        const form = $("#add-proxy-form");
+        if (parseProxyPaste(e.target.value, form)) {
+          const parts = e.target.value.trim().split(":").filter(Boolean);
+          if (parts.length >= 2 && parts.length <= 4) {
+            clearTimeout(window.__addProxyPasteTimer);
+            window.__addProxyPasteTimer = setTimeout(() => {
+              form.requestSubmit();
+            }, 150);
+          }
+        }
+      });
+      $("#add-proxy-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const p = Object.fromEntries(fd.entries());
+        for (const k of Object.keys(p)) if (!p[k]) delete p[k];
+        p.port = Number(p.port);
+        log("info", `Adding proxy ${p.host}:${p.port} (Duoplus tests on add)...`);
+        try {
+          const r = await api("/api/proxies", { body: { proxies: [p] } });
+          if (r?.fail?.length) log("warn", `  ${r.fail[0].message}`);
+          else log("ok", "  added + tested successfully");
+          $("#add-proxy-dialog").close();
+          e.target.reset();
+          await loadProxies();
+        } catch (err) { /* shown by api() */ }
+      });
+      function openProxyDialog(deviceId) {
+        const dlg = $("#proxy-dialog");
+        $("#proxy-form").reset();
+        $("#proxy-paste").value = "";
+        $("#proxy-form [name=device_id]").value = deviceId;
+        $("#proxy-title").textContent = `Set Proxy — ${deviceId}`;
+        loadProxies().then(() => dlg.showModal());
+      }
+      $("#cancel-proxy").addEventListener("click", () => $("#proxy-dialog").close());
+
+      /** Parse "host:port:user:password" into the form fields.
+       * Supports: host:port  OR  host:port:user:password.
+       * Returns true if we filled at least host+port. */
+      function parseProxyPaste(raw, form) {
+        const parts = raw.trim().split(":").map((s) => s.trim()).filter(Boolean);
+        if (parts.length < 2) return false;
+        const [host, port, user, password] = parts;
+        if (!/^\d+$/.test(port)) return false;
+        const set = (name, val) => {
+          const f = form.querySelector(`[name="${name}"]`);
+          if (f) f.value = val ?? "";
+        };
+        set("host", host);
+        set("port", port);
+        set("user", user || "");
+        set("password", password || "");
+        // Reset proxy_id picker if present (so the pasted custom creds win).
+        const picker = form.querySelector('[name="proxy_id"]');
+        if (picker) picker.value = "";
+        return true;
+      }
+
+      $("#proxy-paste").addEventListener("input", (e) => {
+        const form = $("#proxy-form");
+        if (parseProxyPaste(e.target.value, form)) {
+          // Auto-submit once we have a valid parse (fires on every keystroke,
+          // but form.submit() is idempotent and only one request will land
+          // because we close the dialog on success).
+          const parts = e.target.value.trim().split(":").filter(Boolean);
+          if (parts.length >= 2 && parts.length <= 4) {
+            // Only auto-submit when string looks complete (has host + port at minimum).
+            // Use a small debounce via requestAnimationFrame so pasted text resolves fully first.
+            clearTimeout(window.__proxyPasteTimer);
+            window.__proxyPasteTimer = setTimeout(() => {
+              form.requestSubmit();
+            }, 150);
+          }
+        }
+      });
+
+      $("#proxy-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const body = Object.fromEntries(fd.entries());
+        // Cast port to number, strip empty strings
+        for (const k of Object.keys(body)) if (!body[k]) delete body[k];
+        if (body.port) body.port = Number(body.port);
+        try {
+          await api("/api/set-proxy", { body });
+          $("#proxy-dialog").close();
+          log("ok", `Proxy set on ${body.device_id}`);
+        } catch (err) {
+          // Error already shown by api()
+        }
+      });
+
+      async function runBatch(ids) {
+        const concurrency = Number($("#batch-concurrency").value) || 10;
+        const jitter = Number($("#batch-jitter").value) || 0;
+        const cap = Number($("#batch-cap").value) || 30;
+        const automation = $("#batch-automation").value || "warmup";
+        log("info", `Starting ${automation} batch on ${ids.length} device(s), ${concurrency} parallel, ${jitter}s jitter, ${cap}m cap...`);
+        const { run_id } = await api("/api/batch-run", {
+          body: {
+            device_ids: ids,
+            scan_accounts: true, // auto-detects missing accounts via app Profile tab
+            automation,
+            concurrency,
+            start_jitter_sec: jitter,
+            max_minutes: cap,
+          },
+        });
+        pollRun(run_id);
+      }
+
+      // --- Follow Targets ---
+      let followTargets = [];
+      async function loadFollowTargets() {
+        try {
+          followTargets = await api("/api/follow-targets");
+          const tb = $("#follow-targets tbody");
+          if (!followTargets.length) {
+            tb.innerHTML = `<tr><td colspan="8" class="empty">No follow targets yet. Click ＋ Add Target.</td></tr>`;
+            return;
+          }
+          tb.innerHTML = followTargets.map((t) => `
+            <tr data-id="${t.id}">
+              <td>${platformIcon(t.platform)} ${t.platform}</td>
+              <td><strong>@${t.handle}</strong>${t.notes ? `<br><span style="color:var(--muted);font-size:11px">${t.notes}</span>` : ""}</td>
+              <td>${t.min_followers || 0}</td>
+              <td>${t.max_followers ?? "—"}</td>
+              <td>${t.min_posts || 0}</td>
+              <td>${t.skip_private ? "yes" : "no"}</td>
+              <td><input type="checkbox" ${t.enabled ? "checked" : ""} data-act="toggle-follow" data-id="${t.id}"/></td>
+              <td><button class="danger small" data-act="del-follow" data-id="${t.id}">Delete</button></td>
+            </tr>`).join("");
+        } catch (e) { log("warn", `Follow targets: ${e.message}`); }
+      }
+      $("#add-follow-target").addEventListener("click", () => $("#follow-dialog").showModal());
+      $("#cancel-follow").addEventListener("click", () => $("#follow-dialog").close());
+      $("#follow-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const body = Object.fromEntries(fd.entries());
+        // Numeric coercion + booleans
+        body.min_followers = Number(body.min_followers) || 0;
+        body.max_followers = body.max_followers ? Number(body.max_followers) : null;
+        body.min_posts = Number(body.min_posts) || 0;
+        body.max_following = body.max_following ? Number(body.max_following) : null;
+        body.require_avatar = body.require_avatar ? 1 : 0;
+        body.skip_private = body.skip_private ? 1 : 0;
+        try {
+          await api("/api/follow-targets", { body });
+          $("#follow-dialog").close();
+          e.target.reset();
+          log("ok", `Follow target added: ${body.platform} @${body.handle}`);
+          await loadFollowTargets();
+        } catch (err) {}
+      });
+
+      // --- Scheduled Posts ---
+      let postQueue = [];
+      async function loadPosts() {
+        try {
+          postQueue = await api("/api/posts");
+          const tb = $("#posts tbody");
+          if (!postQueue.length) {
+            tb.innerHTML = `<tr><td colspan="7" class="empty">No queued posts.</td></tr>`;
+            return;
+          }
+          tb.innerHTML = postQueue.map((p) => {
+            const media = p.media_urls_json ? JSON.parse(p.media_urls_json).length : 0;
+            const sched = p.scheduled_at
+              ? new Date(p.scheduled_at * 1000).toLocaleString()
+              : "ASAP";
+            const acctLabel = p.account_id
+              ? accounts.find((a) => a.id === p.account_id)?.username ?? `#${p.account_id}`
+              : "— any —";
+            return `<tr>
+              <td>${platformIcon(p.platform)} ${p.platform}</td>
+              <td>${acctLabel}</td>
+              <td>${(p.caption || "—").substring(0, 80)}${(p.caption || "").length > 80 ? "…" : ""}</td>
+              <td>${media || "—"}</td>
+              <td>${sched}</td>
+              <td><span class="status-dot status-${p.status}"></span>${p.status}${p.error ? ` — ${p.error}` : ""}</td>
+              <td><button class="danger small" data-act="del-post" data-id="${p.id}">Delete</button></td>
+            </tr>`;
+          }).join("");
+        } catch (e) { log("warn", `Posts: ${e.message}`); }
+      }
+      $("#add-post").addEventListener("click", () => {
+        const sel = $("#post-account-select");
+        sel.innerHTML = '<option value="">— Any matching account —</option>' +
+          accounts.map((a) => `<option value="${a.id}">${a.platform} @${a.username}</option>`).join("");
+        $("#post-dialog").showModal();
+      });
+      $("#cancel-post").addEventListener("click", () => $("#post-dialog").close());
+      $("#post-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const body = {
+          platform: fd.get("platform"),
+          account_id: fd.get("account_id") ? Number(fd.get("account_id")) : null,
+          caption: fd.get("caption") || null,
+          media_urls: (fd.get("media_urls") || "").toString().split("\n").map((s) => s.trim()).filter(Boolean),
+          scheduled_at: fd.get("scheduled_at")
+            ? Math.floor(new Date(fd.get("scheduled_at").toString()).getTime() / 1000)
+            : null,
+        };
+        try {
+          await api("/api/posts", { body });
+          $("#post-dialog").close();
+          e.target.reset();
+          log("ok", `Post queued for ${body.platform}`);
+          await loadPosts();
+        } catch (err) {}
+      });
+
+      document.addEventListener("click", async (e) => {
+        const act = e.target.dataset?.act;
+        const id = e.target.dataset?.id;
+        if (!act) return;
+        if (act === "on") powerOn([id]);
+        else if (act === "off") powerOff([id]);
+        else if (act === "proxy") openProxyDialog(id);
+        else if (act === "auto-scan") {
+          // Kick off the server-side scan and stream its live log into Activity.
+          // Jumps to Fleet tab so the user sees progress.
+          setTab("fleet");
+          const { run_id } = await api("/api/scan-device", { body: { device_id: id } });
+          pollRun(run_id);
+          // Refresh accounts table periodically while scan runs.
+          const refresh = setInterval(() => loadAccounts(), 5000);
+          setTimeout(() => { clearInterval(refresh); loadAccounts(); }, 180000);
+        }
+        else if (act === "del-proxy") {
+          if (confirm("Delete this proxy from your pool?")) {
+            await api("/api/proxies", { method: "DELETE", body: { ids: [id] } });
+            log("ok", `Proxy ${id} deleted`);
+            await loadProxies();
+          }
+        }
+        else if (act === "del-follow") {
+          if (confirm("Delete this follow target?")) {
+            await api(`/api/follow-targets/${id}`, { method: "DELETE" });
+            await loadFollowTargets();
+          }
+        }
+        else if (act === "toggle-follow") {
+          await api(`/api/follow-targets/${id}`, {
+            method: "PATCH",
+            body: { enabled: e.target.checked ? 1 : 0 },
+          });
+        }
+        else if (act === "del-post") {
+          if (confirm("Delete this queued post?")) {
+            await api(`/api/posts/${id}`, { method: "DELETE" });
+            await loadPosts();
+          }
+        }
+        else if (act === "view-run") {
+          try {
+            const r = await api(`/api/run/${id}/logs`);
+            log("info", `── run ${id} (${r.status || "?"}) — ${r.logs.length} entries ──`);
+            for (const l of r.logs) log(l.level, l.msg);
+          } catch (err) {}
+        }
+        else if (act === "resume-run") {
+          const automation = e.target.dataset.automation;
+          const devices = JSON.parse(e.target.dataset.devices || "[]");
+          if (!devices.length) return;
+          log("info", `Resuming ${automation} on ${devices.length} device(s)...`);
+          const concurrency = Number($("#batch-concurrency").value) || 10;
+          const jitter = Number($("#batch-jitter").value) || 0;
+          const cap = Number($("#batch-cap").value) || 30;
+          const { run_id } = await api("/api/batch-run", {
+            body: {
+              device_ids: devices,
+              scan_accounts: true,
+              automation,
+              concurrency,
+              start_jitter_sec: jitter,
+              max_minutes: cap,
+            },
+          });
+          pollRun(run_id);
+          loadRuns();
+        }
+        else if (act === "del-login") {
+          if (confirm("Delete this queued login?")) {
+            await api(`/api/login-queue/${id}`, { method: "DELETE" });
+            await loadLogins();
+          }
+        }
+        else if (act === "del-screen") {
+          await api(`/api/unknown-screens/${id}`, { method: "DELETE" });
+          await loadScreens();
+        }
+        else if (act === "view-screen") {
+          const row = (window.__screens || []).find((x) => x.id === Number(id));
+          if (row) {
+            $("#screen-detail-body").textContent =
+              `Device: ${row.device_id}\nPlatform: ${row.platform}\nContext: ${row.context}\nFocus: ${row.focus}\nRecovery: ${row.recovery_action} (${row.recovered ? "ok" : "failed"})\n\n--- XML (first 8KB) ---\n${row.xml_head || "(empty)"}`;
+            $("#screen-detail").showModal();
+          }
+        }
+        else if (act === "approve-screen") {
+          await openApprovePatternModal(Number(id));
+        }
+        else if (act === "run-account") runAccount(Number(id), e.target.dataset.device);
+        else if (act === "del-account") {
+          if (confirm("Delete this account?")) {
+            await api(`/api/accounts/${id}`, { method: "DELETE" });
+            await loadAccounts();
+          }
+        }
+      });
+
+      // --- Settings / platform tab ---
+      $$(".platform-tab").forEach((b) =>
+        b.addEventListener("click", () => {
+          $$(".platform-tab").forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+          currentPlatform = b.dataset.plat;
+          renderQuotaForm();
+        }),
+      );
+      $("#save-quota").addEventListener("click", saveQuota);
+
+      // --- Devices bulk ---
+      $("#refresh").addEventListener("click", refreshAll);
+      $("#check-all").addEventListener("change", (e) => {
+        $$(".row-check").forEach((c) => (c.checked = e.target.checked));
+      });
+      $("#sel-all").addEventListener("click", () => $$(".row-check").forEach((c) => (c.checked = true)));
+      $("#sel-none").addEventListener("click", () => $$(".row-check").forEach((c) => (c.checked = false)));
+      $("#bulk-on").addEventListener("click", () => {
+        const ids = selectedDeviceIds();
+        if (ids.length) powerOn(ids);
+      });
+      $("#bulk-off").addEventListener("click", () => {
+        const ids = selectedDeviceIds();
+        if (ids.length) powerOff(ids);
+      });
+      $("#bulk-run").addEventListener("click", () => {
+        const ids = selectedDeviceIds();
+        if (!ids.length) {
+          showError("Select at least one device to run automation on.");
+          return;
+        }
+        setTab("fleet"); // jump to fleet so user sees the activity log
+        runBatch(ids);
+      });
+
+      // ========================================================================
+      // Warmup Phases Tab
+      // ========================================================================
+      const PHASE_DESCRIPTIONS = {
+        1: "<strong>Day 1–3 — Build basic behavior path.</strong><br>Browse feed 10–15 min, like 5–8 posts, save 1–2 posts, view a few stories. <em>No follows, no DMs, no comments.</em> Goal: establish a believable new-user browsing pattern so Instagram's risk scoring doesn't flag the account immediately.",
+        2: "<strong>Day 4–7 — Build interest tags.</strong><br>Likes increase to 8–12, add 2–3 comments (mostly read-only, occasional write), follow 5–8 niche accounts. The algorithm uses these signals to categorize the account's content interest.",
+        3: "<strong>Day 8–14 — Establish content niche.</strong><br>Hashtag exploration via Explore tab, 10–15 likes, 3–5 comments (50% write), save 1–2 posts, follow 5–8 accounts, watch Reels. Hashtag searches are the strongest niche signal in the 2026 algorithm.",
+        4: "<strong>Day 15–21 — Full engagement.</strong><br>15–20 likes, comment on 5 posts (70% write), follow 5–10 accounts, share 2–3 videos (highest-weight action), full Reels + Stories session. Account is now warmed up for normal operation.",
+      };
+
+      let phaseSelectedDevices = new Set();
+      let phasePlatform = "instagram";
+      let phaseSelected = 1;
+
+      function phasePopulateDevices() {
+        const container = $("#phase-device-list");
+        if (!devices.length) {
+          container.innerHTML = '<span style="color:var(--muted); font-size:12px; font-style:italic">No devices found. Refresh the page or check the Devices tab.</span>';
+          return;
+        }
+        container.innerHTML = "";
+        devices.forEach((d) => {
+          const label = document.createElement("label");
+          label.style.cssText = "display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; padding:4px 8px; border:1px solid var(--border); border-radius:5px; background:#12151c;";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.dataset.deviceId = d.id;
+          if (phaseSelectedDevices.has(d.id)) cb.checked = true;
+          cb.addEventListener("change", () => {
+            if (cb.checked) phaseSelectedDevices.add(d.id);
+            else phaseSelectedDevices.delete(d.id);
+          });
+          const dot = document.createElement("span");
+          dot.className = `status-dot status-${d.status === 1 ? "online" : "offline"}`;
+          label.appendChild(cb);
+          label.appendChild(dot);
+          label.appendChild(document.createTextNode(d.name || d.id));
+          container.appendChild(label);
+        });
+      }
+
+      function phaseUpdateDesc() {
+        $("#phase-desc").innerHTML = PHASE_DESCRIPTIONS[phaseSelected] || "";
+      }
+
+      // Platform toggle
+      ["phase-plat-ig", "phase-plat-tt"].forEach((id) => {
+        document.getElementById(id).addEventListener("click", () => {
+          phasePlatform = document.getElementById(id).dataset.plat;
+          document.getElementById("phase-plat-ig").classList.toggle("active", phasePlatform === "instagram");
+          document.getElementById("phase-plat-tt").classList.toggle("active", phasePlatform === "tiktok");
+        });
+      });
+
+      // Phase buttons
+      $$("[data-phase]", $("#phase-btns")).forEach((btn) => {
+        btn.addEventListener("click", () => {
+          phaseSelected = Number(btn.dataset.phase);
+          $$("[data-phase]", $("#phase-btns")).forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          phaseUpdateDesc();
+        });
+      });
+
+      // Select all / none
+      $("#phase-sel-all").addEventListener("click", () => {
+        devices.forEach((d) => phaseSelectedDevices.add(d.id));
+        phasePopulateDevices();
+      });
+      $("#phase-sel-none").addEventListener("click", () => {
+        phaseSelectedDevices.clear();
+        phasePopulateDevices();
+      });
+
+      // Run button
+      $("#phase-run-btn").addEventListener("click", async () => {
+        const ids = [...phaseSelectedDevices];
+        if (!ids.length) { showError("Select at least one device."); return; }
+
+        const maxLikesVal = $("#phase-max-likes").value.trim();
+        const hashtagsVal = $("#phase-hashtags").value.trim();
+        const followsVal = $("#phase-follow-targets").value.trim();
+        const commentsVal = $("#phase-comments").value.trim();
+
+        const phaseConfig = {};
+        if (maxLikesVal) phaseConfig.max_likes = Number(maxLikesVal);
+        if (hashtagsVal) phaseConfig.niche_hashtags = hashtagsVal.split(",").map((s) => s.trim()).filter(Boolean);
+        if (followsVal) phaseConfig.follow_targets = followsVal.split(",").map((s) => s.trim()).filter(Boolean);
+        if (commentsVal) phaseConfig.comment_texts = commentsVal.split("\n").map((s) => s.trim()).filter(Boolean);
+
+        const body = {
+          device_ids: ids,
+          platform: phasePlatform,
+          phase: phaseSelected,
+          max_minutes: Number($("#phase-max-min").value) || 20,
+          phase_config: phaseConfig,
+        };
+
+        try {
+          $("#phase-run-btn").disabled = true;
+          $("#phase-run-status").textContent = "Starting…";
+          const res = await api("/api/phase-run", { body });
+          const runId = res.run_id;
+
+          // Show log panel and start polling
+          const logPanel = $("#phase-log-panel");
+          const logEl2 = $("#phase-log");
+          logPanel.hidden = false;
+          logEl2.innerHTML = "";
+          $("#phase-run-status").textContent = `Running (${ids.length} device${ids.length > 1 ? "s" : ""})…`;
+
+          let lastId = 0;
+          const poll = setInterval(async () => {
+            try {
+              const data = await fetch(`/api/run/${runId}/logs`).then((r) => r.json());
+              const newLogs = (data.logs || []).slice(lastId);
+              newLogs.forEach(({ level, msg }) => {
+                const span = document.createElement("span");
+                span.className = level;
+                span.textContent = `${msg}\n`;
+                logEl2.appendChild(span);
+              });
+              lastId = (data.logs || []).length;
+              logEl2.scrollTop = logEl2.scrollHeight;
+              if (data.done) {
+                clearInterval(poll);
+                $("#phase-run-status").textContent = "Done.";
+                $("#phase-run-btn").disabled = false;
+                // Also write to the main fleet log
+                log("ok", `Phase ${phaseSelected} ${phasePlatform} run complete on ${ids.length} device(s).`);
+              }
+            } catch {}
+          }, 1500);
+
+          setTab("warmup");
+        } catch {
+          $("#phase-run-btn").disabled = false;
+          $("#phase-run-status").textContent = "Failed.";
+        }
+      });
+
+      // Re-populate device list when warmup tab is opened
+      const _origSetTab = setTab;
+      // Patch setTab to populate devices on warmup open
+      $$("nav a").forEach((a) => {
+        if (a.dataset.tab === "warmup") {
+          a.addEventListener("click", () => phasePopulateDevices());
+        }
+      });
+
+      // Init phase description
+      phaseUpdateDesc();
+
+      refreshAll();
+    </script>
+  </body>
+</html>

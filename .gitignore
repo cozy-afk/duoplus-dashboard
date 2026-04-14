@@ -1,0 +1,20 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Claude Code local session state — never commit
+.claude/
+
+# Rust build artifacts for the Tauri desktop shell
+src-tauri/target/
+
+# Bun-compiled server binary (sidecar for Tauri). Rebuild via
+# `bun run build:server`. Don't commit — binary + ~30MB + platform-specific.
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
